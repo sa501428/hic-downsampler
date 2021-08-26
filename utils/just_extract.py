@@ -1,17 +1,22 @@
 import sys
 
 import strawC
-
+import struct
 
 def get_chromosomes(filepath: str):
     chrom_dot_sizes = strawC.getChromosomes(filepath)
     chromosomes = []
     for chromosome in chrom_dot_sizes:
         chrom = chromosome.name
-        if chrom.lower() == 'all':
+        if chrom.lower() == 'all' or chromosome.index == 0:
+            print("Skipping chromosome", chromosome.name, chromosome.index)
             continue
-        chromosomes.append(chrom)
-    return chromosomes
+        chromosomes.append(chromosome)
+    chromosomes.sort(key=lambda chrom: chrom.index)
+    names = []
+    for chrom in chromosomes:
+        names.append(chrom.name)
+    return names
 
 
 def write_short_format_line(outfile, chr1, x1, chr2, y1, score):
@@ -19,7 +24,8 @@ def write_short_format_line(outfile, chr1, x1, chr2, y1, score):
 
 
 def write_short_binary_format_line(outfile, chr1, binX, chr2, binY, counts):
-    outfile.write(bytearray([int(chr1), int(binX), int(chr2), int(binY), float(counts)]))
+    for x in [int(chr1), int(binX), int(chr2), int(binY), float(counts)]:
+        outfile.write(struct.pack('b', x))
 
 
 def write_all_contacts_to_binary_format(outfile, chr1, chr2, result):
@@ -34,6 +40,7 @@ def write_all_contacts_to_short_format(outfile, chr1, chr2, result):
 
 def extract_all_raw_contacts(hicfile, resolution, outfile_name):
     chroms = get_chromosomes(hicfile)
+    print(chroms)
     use_short_binary_output = outfile_name.endswith(".bn")
 
     outfile = open(outfile_name, 'w')
